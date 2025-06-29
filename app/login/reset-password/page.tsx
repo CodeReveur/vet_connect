@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
@@ -32,7 +32,8 @@ const translations: any = {
   }
 }
 
-export default function ResetPasswordPage() {
+// Separate component that uses useSearchParams
+function ResetPasswordForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get('token')
@@ -117,8 +118,8 @@ export default function ResetPasswordPage() {
 
           {/* Logo and Title */}
           <div className="text-center mb-8">
-            <Link href="/" className="inline-flex items-center text-green-700 text-3xl font-bold mb-6">
-              <span className="text-4xl mr-2">🐾</span>
+            <Link href="/" className="inline-flex items-center text-green-700 text-2xl font-bold mb-6">
+              <span className="text-3xl mr-2">🐾</span>
               VetConnect
             </Link>
             <h1 className="text-2xl font-bold text-gray-900">{t.resetPassword}</h1>
@@ -187,5 +188,30 @@ export default function ResetPasswordPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+// Loading component
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 flex items-center justify-center p-4">
+      <div className="max-w-md w-full">
+        <div className="bg-white shadow-xl rounded-2xl border border-green-100 p-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Main component wrapped with Suspense
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <ResetPasswordForm />
+    </Suspense>
   )
 }

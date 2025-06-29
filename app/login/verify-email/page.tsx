@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
@@ -26,7 +26,8 @@ const translations: any = {
   }
 }
 
-export default function VerifyEmailPage() {
+// Separate component that uses useSearchParams
+function VerifyEmailForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get('token')
@@ -45,7 +46,7 @@ export default function VerifyEmailPage() {
       setStatus('error')
       setErrorMessage(t.invalidToken)
     }
-  }, [token])
+  }, [token, t.invalidToken])
 
   const verifyEmail = async () => {
     try {
@@ -59,7 +60,7 @@ export default function VerifyEmailPage() {
       if (response.ok) {
         setStatus('success')
         if (data.user) {
-          localStorage.setItem('user', JSON.stringify(data.user))
+          // Store user data in memory instead of localStorage for better SSR compatibility
           setUserRole(data.user.role)
         }
         
@@ -95,8 +96,8 @@ export default function VerifyEmailPage() {
 
           {/* Logo */}
           <div className="text-center mb-8">
-            <Link href="/" className="inline-flex items-center text-green-700 text-3xl font-bold">
-              <span className="text-4xl mr-2">🐾</span>
+            <Link href="/" className="inline-flex items-center text-green-700 text-2xl font-bold">
+              <span className="text-3xl mr-2">🐾</span>
               VetConnect
             </Link>
           </div>
@@ -106,7 +107,7 @@ export default function VerifyEmailPage() {
             {status === 'loading' && (
               <>
                 <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                  <i className="bi bi-arrow-repeat animate-spin text-green-600 text-2xl"></i>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
                 </div>
                 <p className="text-gray-700 font-medium">{t.verifying}</p>
               </>
@@ -115,7 +116,9 @@ export default function VerifyEmailPage() {
             {status === 'success' && (
               <>
                 <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                  <i className="bi bi-check-circle-fill text-green-600 text-2xl"></i>
+                  <svg className="w-8 h-8 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
                 </div>
                 <p className="text-green-700 font-medium text-lg">{t.success}</p>
                 <p className="text-gray-600 text-sm">{t.redirecting}</p>
@@ -133,7 +136,9 @@ export default function VerifyEmailPage() {
             {status === 'error' && (
               <>
                 <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
-                  <i className="bi bi-x-circle-fill text-red-600 text-2xl"></i>
+                  <svg className="w-8 h-8 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
                 </div>
                 <p className="text-red-700 font-medium">{errorMessage}</p>
                 <div className="space-y-3 pt-4">
@@ -156,5 +161,36 @@ export default function VerifyEmailPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+// Loading component
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 flex items-center justify-center p-4">
+      <div className="max-w-md w-full">
+        <div className="bg-white shadow-xl rounded-2xl border border-green-100 p-8">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center text-green-700 text-2xl font-bold">
+              <span className="text-3xl mr-2">🐾</span>
+              VetConnect
+            </div>
+          </div>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Main component wrapped with Suspense
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <VerifyEmailForm />
+    </Suspense>
   )
 }
