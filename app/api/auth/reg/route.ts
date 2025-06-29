@@ -224,7 +224,7 @@ export async function PUT(request: NextRequest) {
       UPDATE users 
       SET name = $1, full_name = $2, email = $3, phone = $4, address = $5, role = $6
     `;
-    let queryParams = [name, full_name || name, email, phone || null, address || null, role, id];
+    const queryParams = [name, full_name || name, email, phone || null, address || null, role, id];
 
     // If password is provided, include it in the update
     if (password && password.trim() !== '') {
