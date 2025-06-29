@@ -124,11 +124,11 @@ const VetConnectSidebar = ({ onNavigate }: NavBarProps) => {
         ];
       case 'admin':
         return [
-          { name: t.adminPanel, url: "/admin/dashboard", icon: "bi bi-speedometer2" },
-          { name: t.users, url: "/admin/users", icon: "bi bi-people-fill" },
-          { name: t.appointments, url: "/admin/appointments", icon: "bi bi-calendar3" },
-          { name: t.reports, url: "/admin/reports", icon: "bi bi-graph-up" },
-          { name: t.settings, url: "/admin/settings", icon: "bi bi-gear" },
+          { name: t.adminPanel, url: "/dashboard/admin/", icon: "bi bi-speedometer2" },
+          { name: t.users, url: "/dashboard/admin/users", icon: "bi bi-people-fill" },
+          { name: t.appointments, url: "/dashboard/admin/appointments", icon: "bi bi-calendar3" },
+          { name: t.reports, url: "/dashboard/admin/reports", icon: "bi bi-graph-up" },
+          { name: t.settings, url: "/dashboard/admin/settings", icon: "bi bi-gear" },
         ];
       default:
         return [];

@@ -31,6 +31,10 @@ export default function HomePage() {
   const [activeTab, setActiveTab] = useState('farmers')
   const [showBackToTop, setShowBackToTop] = useState(false)
 
+  const [vetCount, setVetCount] = useState(0)
+  const [farmerCount, setFarmerCount] = useState(0)
+  const [appointmentCount, setAppointmentCount] = useState(1)
+
   useEffect(() => {
     const handleScroll = () => {
       setShowBackToTop(window.scrollY > 300)
@@ -39,20 +43,53 @@ export default function HomePage() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const [usersRes, appointmentsRes] = await Promise.all([
+          fetch('/api/users'),
+          fetch('/api/appointments')
+        ])
+
+        if (usersRes.ok) {
+          const usersData = await usersRes.json()
+          const users = usersData.vets || usersData.users || []
+
+          setVetCount(users.filter((u: any) => u.role === 'vet').length)
+          setFarmerCount(users.filter((u: any) => u.role === 'owner' || u.role === 'farmer').length)
+        }
+
+        if (appointmentsRes.ok) {
+          const appointmentsData = await appointmentsRes.json()
+          const appointments = appointmentsData.appointments || []
+          const completed = appointments.filter((a: any) => a.status === 'completed').length
+          setAppointmentCount(completed || 1)
+        }
+      } catch (err) {
+        console.error('Error fetching stats:', err)
+      }
+    }
+
+    fetchStats()
+  }, [])
+
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   return (
     <>
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-green-50 to-green-100 py-20 overflow-hidden">
-        <div className="container mx-auto px-4">
+     {/* Hero Section */}
+      <section className="relative py-28 overflow-hidden bg-cover bg-center bg-no-repeat" style={{backgroundImage: 'url(/cow.jpg)'}}>
+        {/* Overlay for better text readability */}
+        <div className="absolute inset-0 bg-white hidden bg-opacity-40"></div>
+        
+        <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl font-bold text-green-800 mb-6">
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-6 drop-shadow-lg">
               {t('hero_title')}
             </h1>
-            <p className="text-xl text-gray-700 mb-8">
+            <p className="text-xl text-white mb-8 drop-shadow-md">
               {t('hero_description')}
             </p>
             <Link href="/register" className="inline-flex items-center bg-green-700 text-white px-8 py-3 rounded-lg hover:bg-green-800 transition-colors font-semibold text-lg shadow-lg hover:shadow-xl">
@@ -62,25 +99,25 @@ export default function HomePage() {
           </div>
         </div>
         
-        {/* Decorative elements */}
-        <div className="absolute top-10 right-10 text-6xl opacity-10">🐄</div>
-        <div className="absolute bottom-10 left-10 text-6xl opacity-10">🐑</div>
+        {/* Optional: Keep decorative elements or remove them since you have a real cow image */}
+        <div className="absolute top-10 right-10 text-6xl opacity-20 text-white drop-shadow-lg">🐄</div>
+        <div className="absolute bottom-10 left-10 text-6xl opacity-20 text-white drop-shadow-lg">🐑</div>
       </section>
 
-      {/* Stats Section */}
+      {/* Dynamic Stats Section */}
       <section className="bg-white py-12 shadow-sm">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
             <div className="group hover:scale-105 transition-transform">
-              <div className="text-4xl font-bold text-green-700">500+</div>
+              <div className="text-4xl font-bold text-green-700">{vetCount}+</div>
               <div className="text-gray-600 mt-2">{t('active_vets')}</div>
             </div>
             <div className="group hover:scale-105 transition-transform">
-              <div className="text-4xl font-bold text-green-700">2,000+</div>
+              <div className="text-4xl font-bold text-green-700">{farmerCount}+</div>
               <div className="text-gray-600 mt-2">{t('registered_farmers')}</div>
             </div>
             <div className="group hover:scale-105 transition-transform">
-              <div className="text-4xl font-bold text-green-700">10,000+</div>
+              <div className="text-4xl font-bold text-green-700">{appointmentCount}+</div>
               <div className="text-gray-600 mt-2">{t('animals_treated')}</div>
             </div>
           </div>
