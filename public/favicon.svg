@@ -1,0 +1,63 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="100" cy="100" r="95" fill="#2D7D32" stroke="#1B5E20" stroke-width="2"/>
+  
+  <!-- Inner circle for contrast -->
+  <circle cx="100" cy="100" r="80" fill="#4CAF50" opacity="0.1"/>
+  
+  <!-- Stethoscope design -->
+  <g transform="translate(100, 100)">
+    <!-- Stethoscope tube -->
+    <path d="M -25 -20 Q -35 -10 -30 0 Q -25 10 -15 15 Q 0 20 15 15 Q 25 10 30 0 Q 35 -10 25 -20" 
+          fill="none" stroke="#E8F5E8" stroke-width="4" stroke-linecap="round"/>
+    
+    <!-- Left earpiece -->
+    <circle cx="-25" cy="-20" r="5" fill="#E8F5E8"/>
+    
+    <!-- Right earpiece -->
+    <circle cx="25" cy="-20" r="5" fill="#E8F5E8"/>
+    
+    <!-- Chest piece -->
+    <circle cx="30" cy="0" r="12" fill="#E8F5E8" stroke="#C8E6C9" stroke-width="2"/>
+    <circle cx="30" cy="0" r="8" fill="#4CAF50"/>
+    <circle cx="30" cy="0" r="4" fill="#E8F5E8"/>
+  </g>
+  
+  <!-- Paw print -->
+  <g transform="translate(70, 75)">
+    <!-- Main pad -->
+    <ellipse cx="0" cy="8" rx="8" ry="10" fill="#E8F5E8"/>
+    
+    <!-- Toe pads -->
+    <ellipse cx="-8" cy="-2" rx="4" ry="6" fill="#E8F5E8"/>
+    <ellipse cx="-2" cy="-8" rx="4" ry="6" fill="#E8F5E8"/>
+    <ellipse cx="4" cy="-8" rx="4" ry="6" fill="#E8F5E8"/>
+    <ellipse cx="8" cy="-2" rx="4" ry="6" fill="#E8F5E8"/>
+  </g>
+  
+  <!-- Connection nodes/network -->
+  <g>
+    <!-- Connection lines -->
+    <line x1="50" y1="150" x2="80" y2="130" stroke="#81C784" stroke-width="2" opacity="0.7"/>
+    <line x1="80" y1="130" x2="120" y2="140" stroke="#81C784" stroke-width="2" opacity="0.7"/>
+    <line x1="120" y1="140" x2="150" y2="120" stroke="#81C784" stroke-width="2" opacity="0.7"/>
+    <line x1="80" y1="130" x2="100" y2="170" stroke="#81C784" stroke-width="2" opacity="0.7"/>
+    
+    <!-- Connection nodes -->
+    <circle cx="50" cy="150" r="4" fill="#C8E6C9"/>
+    <circle cx="80" cy="130" r="4" fill="#C8E6C9"/>
+    <circle cx="120" cy="140" r="4" fill="#C8E6C9"/>
+    <circle cx="150" cy="120" r="4" fill="#C8E6C9"/>
+    <circle cx="100" cy="170" r="4" fill="#C8E6C9"/>
+  </g>
+  
+  <!-- Medical cross -->
+  <g transform="translate(130, 70)">
+    <rect x="-2" y="-8" width="4" height="16" fill="#E8F5E8" rx="2"/>
+    <rect x="-8" y="-2" width="16" height="4" fill="#E8F5E8" rx="2"/>
+  </g>
+  
+  <!-- Heartbeat line -->
+  <path d="M 60 50 L 70 50 L 75 40 L 80 60 L 85 30 L 90 70 L 95 50 L 140 50" 
+        fill="none" stroke="#E8F5E8" stroke-width="2.5" opacity="0.8"/>
+</svg> 

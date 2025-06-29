@@ -101,6 +101,7 @@ export default function RootLayout({
           rel="stylesheet" 
           href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css"
         />
+        <link rel="shortcut icon" href="favicon.svg" type="image/x-icon" />
         {/* Additional meta tags */}
         <meta name="theme-color" content="#40925b" />
         <meta name="msapplication-TileColor" content="#40925b" />
