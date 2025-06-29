@@ -34,22 +34,6 @@ interface Conversation {
   isTyping?: boolean
 }
 
-interface SupportTicket {
-  id: number
-  user_id: number
-  user_name: string
-  user_full_name?: string
-  user_email: string
-  user_role: string
-  user_profile_picture?: string
-  subject: string
-  priority: string
-  category: string
-  status: string
-  created_at: string
-  description?: string
-}
-
 const translations = {
   en: {
     title: "Admin Messages",
@@ -65,7 +49,6 @@ const translations = {
     admins: "Administrators",
     users: "Users",
     staff: "Staff Members",
-    customers: "Customers",
     all: "All",
     today: "Today",
     yesterday: "Yesterday",
@@ -74,28 +57,12 @@ const translations = {
     newConversation: "New Conversation",
     selectUser: "Select a user to start chatting",
     noConversations: "No conversations yet",
-    startNewChat: "Start a new chat with a user or staff member",
-    supportTickets: "Support Tickets",
+    startNewChat: "Start a new chat with a user",
+    availableUsers: "Available Users",
     startChatWith: "Start chat with",
-    submittedTicket: "Submitted a support ticket:",
-    priority: "Priority",
-    category: "Category",
-    status: "Status",
-    noSupportTickets: "No support tickets found",
+    noAvailableUsers: "No users found",
     newChatTemplate: "New Chat",
-    backToConversations: "Back to Conversations",
-    high: "High",
-    medium: "Medium",
-    low: "Low",
-    open: "Open",
-    inProgress: "In Progress",
-    resolved: "Resolved",
-    closed: "Closed",
-    technical: "Technical",
-    billing: "Billing",
-    general: "General",
-    account: "Account",
-    feature: "Feature Request"
+    backToConversations: "Back to Conversations"
   },
   rw: {
     title: "Ubutumwa bw'Ubuyobozi",
@@ -111,7 +78,6 @@ const translations = {
     admins: "Abayobozi",
     users: "Abakoresha",
     staff: "Abakozi",
-    customers: "Abakiriya",
     all: "Byose",
     today: "Uyu munsi",
     yesterday: "Ejo",
@@ -120,28 +86,12 @@ const translations = {
     newConversation: "Ikiganiro gishya",
     selectUser: "Hitamo umuntu uganire nawe",
     noConversations: "Nta biganiro bihari",
-    startNewChat: "Tangira ikiganiro gishya n'umukoresha cyangwa umukozi",
-    supportTickets: "Ibisabwa by'Ubufasha",
+    startNewChat: "Tangira ikiganiro gishya n'umukoresha",
+    availableUsers: "Abakoresha Bahari",
     startChatWith: "Tangira ikiganiro na",
-    submittedTicket: "Yohereje icyifuzo cy'ubufasha:",
-    priority: "Ibanze",
-    category: "Icyiciro",
-    status: "Uko bimeze",
-    noSupportTickets: "Nta bisabwa by'ubufasha bibonetse",
+    noAvailableUsers: "Nta bakoresha babonetse",
     newChatTemplate: "Ikiganiro Gishya",
-    backToConversations: "Garuka ku biganiro",
-    high: "Byihutirwa",
-    medium: "Byiciriritse",
-    low: "Bidafite ubwihuse",
-    open: "Bifunguye",
-    inProgress: "Birakozwe",
-    resolved: "Byakemuwe",
-    closed: "Bifunze",
-    technical: "Ikoranabuhanga",
-    billing: "Kwishyura",
-    general: "Rusange",
-    account: "Konti",
-    feature: "Gusaba ibiranga"
+    backToConversations: "Garuka ku biganiro"
   }
 }
 
@@ -155,12 +105,12 @@ export default function AdminMessagesPage() {
   const [messageText, setMessageText] = useState('')
   const [currentLang, setCurrentLang] = useState<'en' | 'rw'>('en')
   const [searchTerm, setSearchTerm] = useState('')
-  const [filter, setFilter] = useState<'all' | 'admins' | 'staff' | 'users'>('all')
+  const [filter, setFilter] = useState<'all' | 'admins' | 'users'>('all')
   const [typingUsers, setTypingUsers] = useState<Set<number>>(new Set())
   const [onlineUsers, setOnlineUsers] = useState<Set<number>>(new Set())
   const [showNewChatTemplate, setShowNewChatTemplate] = useState(false)
-  const [supportTickets, setSupportTickets] = useState<SupportTicket[]>([])
-  const [loadingTickets, setLoadingTickets] = useState(false)
+  const [availableUsers, setAvailableUsers] = useState<User[]>([])
+  const [loadingUsers, setLoadingUsers] = useState(false)
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const typingTimeoutRef = useRef<{ [key: number]: NodeJS.Timeout }>({})
@@ -183,7 +133,7 @@ export default function AdminMessagesPage() {
         fetchMessages(selectedConversation.id)
       }
       updateOnlineStatus()
-    }, 3000) // Poll every 3 seconds
+    }, 3000)
     
     return () => {
       if (document.head.contains(link)) {
@@ -206,10 +156,14 @@ export default function AdminMessagesPage() {
 
   const loadUserAndConversations = async () => {
     try {
-      const userData = localStorage.getItem('user')
-      if (!userData) return
+      const userData: any = localStorage.getItem('user')
+      if (!userData) return;
 
       const user = JSON.parse(userData)
+      if(user.role != 'admin') {
+        window.location.assign("/login")
+        return;
+      }
       setCurrentUser(user)
       
       await fetchConversations(user.id)
@@ -222,7 +176,7 @@ export default function AdminMessagesPage() {
 
   const fetchConversations = async (userId: number) => {
     try {
-      // Fetch all messages for the current user
+      // Fetch only messages where the current admin user is involved
       const response = await fetch(`/api/messages?user_id=${userId}`, {
         credentials: 'include'
       })
@@ -231,10 +185,15 @@ export default function AdminMessagesPage() {
         const data = await response.json()
         const messages = data.messages || []
         
-        // Group messages by conversation partner
+        // Group messages by conversation partner (only where admin is sender or receiver)
         const conversationMap = new Map<number, Conversation>()
         
         messages.forEach((msg: Message) => {
+          // Only process messages where current user is involved
+          if (msg.sender_id !== userId && msg.receiver_id !== userId) {
+            return
+          }
+          
           const partnerId = msg.sender_id === userId ? msg.receiver_id : msg.sender_id
           const partnerName = msg.sender_id === userId ? msg.receiver_name : msg.sender_name
           const partnerFullName = msg.sender_id === userId ? msg.receiver_full_name : msg.sender_full_name
@@ -260,7 +219,7 @@ export default function AdminMessagesPage() {
             }
           }
           
-          // Count unread messages
+          // Count unread messages received by admin
           if (msg.receiver_id === userId && !msg.is_read) {
             const conv = conversationMap.get(partnerId)!
             conv.unreadCount++
@@ -277,13 +236,13 @@ export default function AdminMessagesPage() {
         
         setConversations(conversationsList)
         
-        // Also fetch user details for better display
+        // Fetch user details for better display
         await fetchUserDetails(conversationsList.map(c => c.user.id))
         
         // If no conversations, show new chat template
         if (conversationsList.length === 0) {
           setShowNewChatTemplate(true)
-          await fetchSupportTickets(userId)
+          await fetchAvailableUsers(userId)
         }
       }
     } catch (err) {
@@ -299,7 +258,7 @@ export default function AdminMessagesPage() {
       
       if (response.ok) {
         const data = await response.json()
-        const users = data.users || []
+        const users = data.vets || []
         
         // Update conversation users with user details
         setConversations(prev => prev.map(conv => {
@@ -324,40 +283,37 @@ export default function AdminMessagesPage() {
     }
   }
 
-  const fetchSupportTickets = async (userId: number) => {
-    setLoadingTickets(true)
+  const fetchAvailableUsers = async (currentUserId: number) => {
+    setLoadingUsers(true)
     try {
-      const response = await fetch(`/api/users?admin_id=${userId}`, {
+      const response = await fetch('/api/users', {
         credentials: 'include'
       })
       
       if (response.ok) {
         const data = await response.json()
-        const tickets = data.vets || []
+        const users = data.vets || []
         
-        // Transform ticket data to include user info
-        const supportTickets: SupportTicket[] = tickets.map((ticket: any) => ({
-          id: ticket.id,
-          user_id: ticket.id,
-          user_name: ticket.name || 'Unknown User',
-          user_full_name: ticket.user_full_name,
-          user_email: ticket.user_email || '',
-          user_role: ticket.role || 'user',
-          user_profile_picture: ticket.user_profile_picture,
-          subject: ticket.subject || 'Start new chat',
-          priority: ticket.priority || 'medium',
-          category: ticket.category || 'general',
-          status: ticket.status || 'open',
-          created_at: ticket.created_at,
-          description: ticket.description
-        }))
+        // Filter out current user and only show users admin can chat with
+        const filteredUsers: User[] = users
+          .filter((user: any) => user.id !== currentUserId)
+          .map((user: any) => ({
+            id: user.id,
+            name: user.name || 'Unknown User',
+            full_name: user.full_name,
+            email: user.email || '',
+            role: user.role || 'user',
+            profile_picture: user.profile_picture,
+            is_online: onlineUsers.has(user.id),
+            last_seen: user.last_seen
+          }))
         
-        setSupportTickets(supportTickets)
+        setAvailableUsers(filteredUsers)
       }
     } catch (err) {
-      console.error('Error fetching support tickets:', err)
+      console.error('Error fetching available users:', err)
     } finally {
-      setLoadingTickets(false)
+      setLoadingUsers(false)
     }
   }
 
@@ -417,28 +373,15 @@ export default function AdminMessagesPage() {
     }
   }
 
-  const startNewConversation = (ticket: SupportTicket) => {
-    const user: User = {
-      id: ticket.user_id,
-      name: ticket.user_name,
-      full_name: ticket.user_full_name,
-      email: ticket.user_email,
-      role: ticket.user_role,
-      profile_picture: ticket.user_profile_picture,
-      is_online: onlineUsers.has(ticket.user_id)
-    }
-    
+  const startNewConversation = (user: User) => {
     setSelectedConversation(user)
     setMessages([])
     setShowNewChatTemplate(false)
     
-    // Set a default message template
-    const priorityText = currentLang === 'en' ? ticket.priority : t[ticket.priority as keyof typeof t]
-    const statusText = currentLang === 'en' ? ticket.status : t[ticket.status as keyof typeof t]
-    
+    // Set a default greeting message
     const defaultMessage = currentLang === 'en' 
-      ? `Hello! I received your support ticket: "${ticket.subject}". Priority: ${priorityText}, Status: ${statusText}. How can I assist you today?`
-      : `Muraho! Nahawe icyifuzo cyawe cy'ubufasha: "${ticket.subject}". ${t.priority}: ${priorityText}, ${t.status}: ${statusText}. Nshobora kugufasha gute?`
+      ? `Hello ${user.full_name || user.name}! How can I assist you today?`
+      : `Muraho ${user.full_name || user.name}! Nshobora kugufasha gute uyu munsi?`
     
     setMessageText(defaultMessage)
     
@@ -496,7 +439,6 @@ export default function AdminMessagesPage() {
   const handleTyping = () => {
     if (!currentUser || !selectedConversation) return
     
-    // Simulate typing indicator (in real app, use WebSocket)
     if (typingTimeoutRef.current[selectedConversation.id]) {
       clearTimeout(typingTimeoutRef.current[selectedConversation.id])
     }
@@ -544,31 +486,21 @@ export default function AdminMessagesPage() {
     return formatTime(lastSeen)
   }
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority.toLowerCase()) {
-      case 'high': return 'text-red-600 bg-red-100'
-      case 'medium': return 'text-yellow-600 bg-yellow-100'
-      case 'low': return 'text-green-600 bg-green-100'
-      default: return 'text-gray-600 bg-gray-100'
-    }
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'open': return 'text-green-600 bg-green-100'
-      case 'in progress': return 'text-orange-600 bg-orange-100'
-      case 'resolved': return 'text-green-600 bg-green-100'
-      case 'closed': return 'text-gray-600 bg-gray-100'
-      default: return 'text-gray-600 bg-gray-100'
-    }
-  }
-
   const getRoleIcon = (role: string) => {
     switch (role.toLowerCase()) {
       case 'admin': return 'bi-shield-check'
       case 'staff': return 'bi-person-badge'
       case 'user': return 'bi-person'
       default: return 'bi-person'
+    }
+  }
+
+  const getRoleColor = (role: string) => {
+    switch (role.toLowerCase()) {
+      case 'admin': return 'text-red-600 bg-red-100'
+      case 'staff': return 'text-blue-600 bg-blue-100'
+      case 'user': return 'text-green-600 bg-green-100'
+      default: return 'text-gray-600 bg-gray-100'
     }
   }
 
@@ -579,6 +511,16 @@ export default function AdminMessagesPage() {
     if (filter === 'all') return matchesSearch
     if (filter === 'admins') return matchesSearch && conv.user.role === 'admin'
     if (filter === 'users') return matchesSearch && ['user', 'customer'].includes(conv.user.role)
+    return matchesSearch
+  })
+
+  const filteredAvailableUsers = availableUsers.filter(user => {
+    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         user.full_name?.toLowerCase().includes(searchTerm.toLowerCase())
+    
+    if (filter === 'all') return matchesSearch
+    if (filter === 'admins') return matchesSearch && user.role === 'admin'
+    if (filter === 'users') return matchesSearch && ['user', 'customer'].includes(user.role)
     return matchesSearch
   })
 
@@ -623,117 +565,107 @@ export default function AdminMessagesPage() {
             </div>
           </div>
           
-          {!showNewChatTemplate && (
-            <>
-              {/* Search */}
-              <div className="relative mb-4">
-                <i className="bi bi-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                <input
-                  type="text"
-                  placeholder={t.searchPlaceholder}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 w-full bg-gray-100 border-0 rounded-lg focus:ring-2 focus:ring-green-500"
-                />
-              </div>
-              
-              {/* Filter Tabs */}
-              <div className="flex gap-2 flex-wrap">
-                {['all', 'admins', 'users'].map((filterType) => (
-                  <button
-                    key={filterType}
-                    onClick={() => setFilter(filterType as any)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                      filter === filterType
-                        ? 'bg-green-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    {t[filterType as keyof typeof t]}
-                  </button>
-                ))}
-              </div>
-              
-              {/* New Chat Button */}
-              {conversations.length > 0 && (
-                <button
-                  onClick={() => {
-                    setShowNewChatTemplate(true)
-                    fetchSupportTickets(currentUser?.id || 0)
-                  }}
-                  className="w-full mt-4 px-4 py-2 bg-gradient-to-r from-green-600 to-indigo-600 text-white rounded-lg hover:shadow-md transition-all"
-                >
-                  <i className="bi bi-plus-circle mr-2"></i>
-                  {t.newConversation}
-                </button>
-              )}
-            </>
-          )}
+          {/* Search */}
+          <div className="relative mb-4">
+            <i className="bi bi-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            <input
+              type="text"
+              placeholder={t.searchPlaceholder}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-4 py-2 w-full bg-gray-100 border-0 rounded-lg focus:ring-2 focus:ring-green-500"
+            />
+          </div>
+          
+          {/* Filter Tabs */}
+          <div className="flex gap-2 flex-wrap mb-4">
+            {['all', 'admins', 'users'].map((filterType) => (
+              <button
+                key={filterType}
+                onClick={() => setFilter(filterType as any)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  filter === filterType
+                    ? 'bg-green-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {t[filterType as keyof typeof t]}
+              </button>
+            ))}
+          </div>
+          
+          {/* New Chat Button */}
+          <button
+            onClick={() => {
+              setShowNewChatTemplate(true)
+              fetchAvailableUsers(currentUser?.id || 0)
+            }}
+            className="w-full px-4 py-2 bg-gradient-to-r from-green-600 to-indigo-600 text-white rounded-lg hover:shadow-md transition-all"
+          >
+            <i className="bi bi-plus-circle mr-2"></i>
+            {t.newConversation}
+          </button>
         </div>
         
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto">
           {showNewChatTemplate ? (
-            // Support Tickets Template
+            // Available Users Template
             <div className="p-4">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <i className="bi bi-life-preserver text-green-600"></i>
-                {t.supportTickets}
+                <i className="bi bi-people text-green-600"></i>
+                {t.availableUsers}
               </h3>
               
-              {loadingTickets ? (
+              {loadingUsers ? (
                 <div className="flex items-center justify-center py-8">
                   <div className="animate-spin h-8 w-8 border-2 border-green-600 border-t-transparent rounded-full"></div>
                 </div>
-              ) : supportTickets.length === 0 ? (
+              ) : filteredAvailableUsers.length === 0 ? (
                 <div className="text-center py-8">
-                  <i className="bi bi-ticket-perforated text-gray-300 text-4xl mb-4 block"></i>
-                  <p className="text-gray-500">{t.noSupportTickets}</p>
+                  <i className="bi bi-people text-gray-300 text-4xl mb-4 block"></i>
+                  <p className="text-gray-500">{t.noAvailableUsers}</p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {supportTickets.map((ticket) => (
+                  {filteredAvailableUsers.map((user) => (
                     <div
-                      key={ticket.id}
-                      onClick={() => startNewConversation(ticket)}
+                      key={user.id}
+                      onClick={() => startNewConversation(user)}
                       className="p-4 bg-gray-50 hover:bg-green-50 rounded-lg cursor-pointer transition-colors border border-gray-200 hover:border-green-200"
                     >
-                      <div className="flex items-start gap-3">
+                      <div className="flex items-center gap-3">
                         <div className="relative">
                           <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center text-white font-semibold">
-                            {ticket.user_profile_picture ? (
-                              <img src={ticket.user_profile_picture} alt="" className="w-full h-full rounded-full object-cover" />
+                            {user.profile_picture ? (
+                              <img src={user.profile_picture} alt="" className="w-full h-full rounded-full object-cover" />
                             ) : (
-                              ticket.user_name.charAt(0).toUpperCase()
+                              user.name.charAt(0).toUpperCase()
                             )}
                           </div>
-                          <div className={`absolute -bottom-1 -right-1 p-1 rounded-full text-xs ${getRoleIcon(ticket.user_role)}`}>
-                            <i className={`bi ${getRoleIcon(ticket.user_role)} text-gray-600`}></i>
+                          <div className={`absolute -bottom-1 -right-1 p-1 rounded-full text-xs`}>
+                            <i className={`bi ${getRoleIcon(user.role)} text-gray-600`}></i>
                           </div>
+                          {onlineUsers.has(user.id) && (
+                            <div className="absolute top-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                          )}
                         </div>
                         
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-1">
                             <h4 className="font-semibold text-gray-900 truncate">
-                              {ticket.user_full_name || ticket.user_name}
+                              {user.full_name || user.name}
                             </h4>
-                            <div className="flex gap-1">
-                              <span className={`px-2 py-1 text-xs rounded-full ${getPriorityColor(ticket.priority)}`}>
-                                {t[ticket.priority as keyof typeof t] || ticket.priority}
-                              </span>
-                            </div>
+                            <span className={`px-2 py-1 text-xs rounded-full ${getRoleColor(user.role)}`}>
+                              {user.role}
+                            </span>
                           </div>
-                          <p className="text-sm font-medium text-gray-800 truncate">
-                            {ticket.subject}
+                          <p className="text-sm text-gray-600 truncate">
+                            {user.email}
                           </p>
-                          <div className="flex items-center justify-between mt-2">
-                            <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(ticket.status)}`}>
-                              {t[ticket.status as keyof typeof t] || ticket.status}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              {formatTime(ticket.created_at)}
-                            </span>
-                          </div>
+                          <p className="text-xs text-gray-500">
+                            {onlineUsers.has(user.id) ? t.online : `${t.lastSeen} ${formatLastSeen(user.last_seen)}`}
+                          </p>
                         </div>
                         
                         <div className="flex flex-col items-end">
@@ -842,7 +774,9 @@ export default function AdminMessagesPage() {
                   <div>
                     <h2 className="font-semibold text-gray-900 flex items-center gap-2">
                       {selectedConversation.full_name || selectedConversation.name}
-                      <i className={`bi ${getRoleIcon(selectedConversation.role)} text-sm text-gray-500`}></i>
+                      <span className={`px-2 py-1 text-xs rounded-full ${getRoleColor(selectedConversation.role)}`}>
+                        {selectedConversation.role}
+                      </span>
                     </h2>
                     <p className="text-xs text-gray-500">
                       {typingUsers.has(selectedConversation.id) ? (

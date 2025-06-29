@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
     }
 
     const result = await client.query(
-      `SELECT id, name, type, breed, gender, birth_date, 
+      `SELECT id, name, type, breed, gender, birth_date, owner_id, 
               identification_number, color, weight, health_status, 
               notes, created_at, updated_at
        FROM animals 

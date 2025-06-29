@@ -106,6 +106,8 @@ export default function LoginPage() {
         router.push('/dashboard')
       } else if (userRole === 'owner') {
         router.push('/dashboard')
+      } else if (userRole === 'admin') {
+        router.push('/dashboard/admin')
       } else {
         router.push('/dashboard')
       }
@@ -119,7 +121,7 @@ export default function LoginPage() {
   }
 
   const handleOTPVerified = () => {
-    router.push('/dashboard')
+    router.push(`/dashboard`)
   }
 
   const handleForgotPassword = (e: React.MouseEvent) => {
