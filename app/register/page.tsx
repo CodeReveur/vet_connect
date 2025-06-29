@@ -145,12 +145,12 @@ export default function RegisterPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          fullName: formData.fullName.trim(),
+          full_name: formData.fullName.trim(),
           email: formData.email.trim().toLowerCase(),
           phone: formData.phone.trim() || null,
           password: formData.password,
-          location: formData.location.trim() || null,
-          userType: userType
+          address: formData.location.trim() || null,
+          role: userType
         }),
       })
 
