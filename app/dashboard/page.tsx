@@ -213,12 +213,12 @@ export default function Dashboard() {
               🌐 {lang === 'en' ? 'English' : 'Kinyarwanda'}
             </button>
             {isVet ? (
-              <Link href="/appointments" className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+              <Link href="/dashboard/appointments" className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
                 <i className="bi bi-calendar-week mr-2"></i>
                 {t.viewSchedule}
               </Link>
             ) : (
-              <Link href="/find-vets" className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+              <Link href="/dashboard/find-vets" className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
                 <i className="bi bi-plus-circle mr-2"></i>
                 {t.bookAppointment}
               </Link>
