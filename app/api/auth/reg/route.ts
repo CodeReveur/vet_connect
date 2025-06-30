@@ -53,10 +53,10 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, full_name, email, phone, address, password, role } = body
+    const { full_name, email, phone, address, password, role } = body
 
     // Validate required fields
-    if (!name || !email || !password || !role) {
+    if (!full_name || !email || !password || !role) {
       return NextResponse.json(
         { error: 'Missing required fields: name, email, password, and role are required' },
         { status: 400 }
@@ -78,11 +78,11 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-
+    const roleReversed = role === 'farmer' ? 'owner' : 'vet';
     // Validate role
-    if (!['admin', 'vet', 'owner'].includes(role)) {
+    if (!['admin', 'vet', 'owner'].includes(roleReversed)) {
       return NextResponse.json(
-        { error: 'Invalid role. Must be admin, vet, or owner' },
+        { error: 'Invalid role. Must be vet, or owner' },
         { status: 400 }
       )
     }
@@ -100,7 +100,9 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    const hashedPassword = await hashPassword(password)
+    const hashedPassword = await hashPassword(password);
+
+    const name = full_name.trim(' ');
 
     // Insert new user
     const result = await client.query(
@@ -108,7 +110,7 @@ export async function POST(request: NextRequest) {
        VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP) 
        RETURNING id, name, full_name, email, phone, address, role, created_at`,
       [
-        name,
+        name.toLowerCase(),
         full_name || name,
         email,
         phone || null,

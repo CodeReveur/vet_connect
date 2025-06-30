@@ -311,15 +311,15 @@ export default function MessagesPage() {
           user_name: req.user_name || 'Unknown User',
           user_full_name: req.user_full_name,
           user_email: req.user_email || '',
-          user_role: req.user_role || 'owner',
+          user_role: req.user_role,
           user_profile_picture: req.user_profile_picture,
-          animal_name: req.animal_name || 'Pet',
+          animal_name: req.animal_name,
           appointment_date: req.appointment_date,
           status: req.status,
           created_at: req.created_at
         }))
-        
-        setAppointmentRequests(appointmentRequests)
+        const appFiltered = appointmentRequests.filter((n) => n.user_role === 'owner')
+        setAppointmentRequests(appFiltered)
       }
     } catch (err) {
       console.error('Error fetching appointment requests:', err)

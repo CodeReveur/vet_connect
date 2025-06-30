@@ -279,7 +279,7 @@ export default function MessagesPage() {
               user: {
                 ...conv.user,
                 email: vet.email,
-                role: 'vet',
+                role: 'owner',
                 profile_picture: vet.profile_picture,
                 full_name: vet.full_name
               }

@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
         a.notes,
         u.name as user_name,
         u.email as user_email,
+        u.role as user_role,
         u.phone as user_phone,
         v.name as vet_name,
         v.email as vet_email,
