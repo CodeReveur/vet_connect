@@ -296,7 +296,14 @@ export default function MessagesPage() {
   const fetchAppointmentRequests = async (userId: number) => {
     setLoadingRequests(true)
     try {
-      const response = await fetch(`/api/appointments?user_id=${userId}`, {
+      // If current user is a vet, fetch appointments where they are the vet_id
+      // If current user is an owner, fetch appointments where they are the user_id
+      const isVet = currentUser?.role === 'vet'
+      const endpoint = isVet 
+        ? `/api/appointments?vet_id=${userId}`
+        : `/api/appointments?user_id=${userId}`
+      
+      const response = await fetch(endpoint, {
         credentials: 'include'
       })
       
@@ -305,21 +312,46 @@ export default function MessagesPage() {
         const requests = data.appointments || []
         
         // Transform appointment data to include user info
-        const appointmentRequests: AppointmentRequest[] = requests.map((req: any) => ({
-          id: req.id,
-          user_id: req.user_id,
-          user_name: req.user_name || 'Unknown User',
-          user_full_name: req.user_full_name,
-          user_email: req.user_email || '',
-          user_role: req.user_role,
-          user_profile_picture: req.user_profile_picture,
-          animal_name: req.animal_name,
-          appointment_date: req.appointment_date,
-          status: req.status,
-          created_at: req.created_at
-        }))
-        const appFiltered = appointmentRequests.filter((n) => n.user_role === 'owner')
-        setAppointmentRequests(appFiltered)
+        const appointmentRequests: AppointmentRequest[] = requests.map((req: any) => {
+          // For vets, show the animal owner's info
+          // For owners, show the vet's info
+          if (isVet) {
+            return {
+              id: req.id,
+              user_id: req.user_id,
+              user_name: req.user_name || 'Unknown User',
+              user_full_name: req.user_full_name,
+              user_email: req.user_email || '',
+              user_role: req.user_role || 'owner',
+              user_profile_picture: req.user_profile_picture,
+              animal_name: req.animal_name,
+              appointment_date: req.appointment_date,
+              status: req.status,
+              created_at: req.created_at
+            }
+          } else {
+            return {
+              id: req.id,
+              user_id: req.vet_id,
+              user_name: req.vet_name || 'Unknown Vet',
+              user_full_name: req.vet_full_name,
+              user_email: req.vet_email || '',
+              user_role: 'vet',
+              user_profile_picture: req.vet_profile_picture,
+              animal_name: req.animal_name,
+              appointment_date: req.appointment_date,
+              status: req.status,
+              created_at: req.created_at
+            }
+          }
+        })
+        
+        // Filter to only show pending or confirmed appointments
+        const activeAppointments = appointmentRequests.filter(
+          (apt) => apt.status === 'pending' || apt.status === 'confirmed'
+        )
+        
+        setAppointmentRequests(activeAppointments)
       }
     } catch (err) {
       console.error('Error fetching appointment requests:', err)
